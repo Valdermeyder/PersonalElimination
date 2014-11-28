@@ -3,7 +3,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-class BaseballElimination {
+public class BaseballElimination {
     private final List<String> teams;
     private final int[] winGames;
     private final int[] loseGames;
@@ -27,15 +27,57 @@ class BaseballElimination {
             for (int j = 0; j < numberOfTeams; j++) {
                 againstGames[i][j] = in.readInt();
             }
+        }
+        for (int i = 0; i < numberOfTeams; i++) {
             int possibleWins = winGames[i] + remainingGames[i];
-            for (int j = i - 1; j >= 0; j--) {
+            List<String> eliminatedBy = new ArrayList<String>();
+            for (int j = 0; j < numberOfTeams; j++) {
                 if (possibleWins < winGames[j]) {
-                    List<String> eliminatedBy = new ArrayList<String>(j + 1);
-                    for (int k = 0; k <= j; k++) {
-                        eliminatedBy.add(teams.get(k));
+                    eliminatedBy.add(teams.get(j));
+
+                }
+            }
+            if (!eliminatedBy.isEmpty()) {
+                certifiedOfEliminated.put(teams.get(i), eliminatedBy);
+            }
+        }
+        int flowNetworkSize = numberOfTeams + 1 + calculateNumberOfGames(numberOfTeams);
+        for (int i = 0; i < numberOfTeams; i++) {
+            final String eliminatedTeam = teams.get(i);
+            if (!certifiedOfEliminated.containsKey(eliminatedTeam)) {
+                FlowNetwork teamFlowNetwork = new FlowNetwork(flowNetworkSize);
+                int nodeIndex = 1;
+                int teamIndexInFlow = flowNetworkSize - numberOfTeams;
+                int expectedTeamFlow = 0;
+                for (int j = 0; j < numberOfTeams; j++) {
+                    for (int k = j + 1; k < numberOfTeams; k++) {
+                        if (j != i && k != i) {
+                            expectedTeamFlow += againstGames[j][k];
+                            teamFlowNetwork.addEdge(new FlowEdge(0, nodeIndex, againstGames[j][k]));
+                            teamFlowNetwork.addEdge(new FlowEdge(nodeIndex, teamIndexInFlow + j, Integer.MAX_VALUE));
+                            teamFlowNetwork.addEdge(new FlowEdge(nodeIndex++, teamIndexInFlow + k, Integer.MAX_VALUE));
+                        }
                     }
-                    certifiedOfEliminated.put(teams.get(i), eliminatedBy);
-                    break;
+                }
+                final int capacity = winGames[i] + remainingGames[i];
+                int teamIndex = 0;
+                for (int j = teamIndexInFlow; j < teamIndexInFlow + numberOfTeams; j++) {
+                    if (teamIndex != i) {
+                        teamFlowNetwork.addEdge(new FlowEdge(j, flowNetworkSize - 1, capacity - winGames[teamIndex]));
+                    }
+                    teamIndex++;
+                }
+                FordFulkerson fordFulkerson = new FordFulkerson(teamFlowNetwork, 0, flowNetworkSize - 1);
+                if (fordFulkerson.value() < expectedTeamFlow) {
+                    teamIndex = 0;
+                    List<String> eliminatedByList = new ArrayList<String>();
+                    for (int j = teamIndexInFlow; j < teamIndexInFlow + numberOfTeams; j++) {
+                        if (teamIndex != i && fordFulkerson.inCut(j)) {
+                            eliminatedByList.add(teams.get(teamIndex));
+                        }
+                        teamIndex++;
+                    }
+                    certifiedOfEliminated.put(eliminatedTeam, eliminatedByList);
                 }
             }
         }
@@ -96,4 +138,12 @@ class BaseballElimination {
         }
         return certifiedOfEliminated.get(team);
     }// subset R of teams that eliminates given team; null if not eliminated
+
+    private int calculateNumberOfGames(int numberOfTeams) {
+        int sum = 0;
+        for (int i = 1; i < numberOfTeams - 1; i++) {
+            sum += i;
+        }
+        return sum;
+    }
 }
