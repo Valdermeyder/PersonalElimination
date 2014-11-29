@@ -49,31 +49,44 @@ public class BaseballElimination {
                 int nodeIndex = 1;
                 int teamIndexInFlow = flowNetworkSize - numberOfTeams;
                 int expectedTeamFlow = 0;
+                int firstCommandIncrement = 0;
                 for (int j = 0; j < numberOfTeams; j++) {
-                    for (int k = j + 1; k < numberOfTeams; k++) {
-                        if (j != i && k != i) {
-                            expectedTeamFlow += againstGames[j][k];
-                            teamFlowNetwork.addEdge(new FlowEdge(0, nodeIndex, againstGames[j][k]));
-                            teamFlowNetwork.addEdge(new FlowEdge(nodeIndex, teamIndexInFlow + j, Integer.MAX_VALUE));
-                            teamFlowNetwork.addEdge(new FlowEdge(nodeIndex++, teamIndexInFlow + k, Integer.MAX_VALUE));
+                    if (j != i) {
+                        int secondCommandIncrement = firstCommandIncrement + 1;
+                        for (int k = j + 1; k < numberOfTeams; k++) {
+                            if (k != i) {
+                                expectedTeamFlow += againstGames[j][k];
+                                teamFlowNetwork.addEdge(new FlowEdge(0, nodeIndex, againstGames[j][k]));
+                                teamFlowNetwork.addEdge(new FlowEdge(nodeIndex, teamIndexInFlow + firstCommandIncrement, Integer.MAX_VALUE));
+                                teamFlowNetwork.addEdge(new FlowEdge(nodeIndex, teamIndexInFlow + secondCommandIncrement, Integer.MAX_VALUE));
+                                nodeIndex++;
+                                secondCommandIncrement++;
+                            }
                         }
+                        firstCommandIncrement++;
                     }
                 }
                 final int capacity = winGames[i] + remainingGames[i];
                 int teamIndex = 0;
-                for (int j = teamIndexInFlow; j < teamIndexInFlow + numberOfTeams; j++) {
+                firstCommandIncrement = 0;
+                for (int j = 0; j < numberOfTeams; j++) {
                     if (teamIndex != i) {
-                        teamFlowNetwork.addEdge(new FlowEdge(j, flowNetworkSize - 1, capacity - winGames[teamIndex]));
+                        teamFlowNetwork.addEdge(new FlowEdge(teamIndexInFlow + firstCommandIncrement, flowNetworkSize - 1, capacity - winGames[teamIndex]));
+                        firstCommandIncrement++;
                     }
                     teamIndex++;
                 }
                 FordFulkerson fordFulkerson = new FordFulkerson(teamFlowNetwork, 0, flowNetworkSize - 1);
                 if (fordFulkerson.value() < expectedTeamFlow) {
                     teamIndex = 0;
+                    firstCommandIncrement = 0;
                     List<String> eliminatedByList = new ArrayList<String>();
-                    for (int j = teamIndexInFlow; j < teamIndexInFlow + numberOfTeams; j++) {
-                        if (teamIndex != i && fordFulkerson.inCut(j)) {
-                            eliminatedByList.add(teams.get(teamIndex));
+                    for (int j = 0; j < numberOfTeams; j++) {
+                        if (teamIndex != i) {
+                            if (fordFulkerson.inCut(teamIndexInFlow + firstCommandIncrement)) {
+                                eliminatedByList.add(teams.get(teamIndex));
+                            }
+                            firstCommandIncrement++;
                         }
                         teamIndex++;
                     }

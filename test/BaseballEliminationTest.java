@@ -65,7 +65,7 @@ public class BaseballEliminationTest {
     @Test
     public void test4aTeamFile() {
         final String testTeam = "Ghaddafi";
-        Collection<String> eliminatedByExpected = new ArrayList<String>(1);
+        Collection<String> eliminatedByExpected;
         BaseballElimination baseballElimination = new BaseballElimination("teams4a.txt");
         assertEquals("Wrong number of teams", 4, baseballElimination.numberOfTeams());
         assertEquals("Wrong number of wins", 2, baseballElimination.wins(testTeam));
@@ -81,8 +81,11 @@ public class BaseballEliminationTest {
         assertEquals("Wrong teams", expectedTeams, baseballElimination.teams());
 
         //assert Ghaddafi
-        assertFalse("Wrong value of eliminated", baseballElimination.isEliminated(testTeam));
-        assertNull("Wrong certificated of elimination teams", baseballElimination.certificateOfElimination(testTeam));
+        assertTrue("Wrong value of eliminated", baseballElimination.isEliminated(testTeam));
+        eliminatedByExpected = new ArrayList<String>(2);
+        eliminatedByExpected.add("CIA");
+        eliminatedByExpected.add("Obama");
+        assertEquals("Wrong certificated of elimination teams", eliminatedByExpected, baseballElimination.certificateOfElimination(testTeam));
 
         //assert Bin_Ladin
         assertTrue("Wrong value of eliminated", baseballElimination.isEliminated("Bin_Ladin"));
