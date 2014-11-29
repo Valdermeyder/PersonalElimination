@@ -150,7 +150,7 @@ public class BaseballElimination {
             throw new IllegalArgumentException("Team is not exist: " + team);
         }
         return certifiedOfEliminated.get(team);
-    }// subset R of teams that eliminates given team; null if not eliminated
+    } // subset R of teams that eliminates given team; null if not eliminated
 
     private int calculateNumberOfGames(int numberOfTeams) {
         int sum = 0;
